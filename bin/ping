@@ -1,0 +1,37 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "socket"
+
+require_relative "../lib/elves/package"
+
+def test(host, port, cnt = 10, interval = 1)
+  sockets = []
+
+  cnt.times do
+    sockets << TCPSocket.new(host, port)
+  end
+
+  sockets = sockets.map do |socket|
+    Elves::Package.new(socket)
+  end
+
+  loop do
+    index = rand(cnt)
+    payload = {
+      type: 'say hello',
+      payload: 'This is a very very very very long payload from my hand',
+      from: index
+    }
+    socket = sockets[index]
+    puts "Try to send #{payload.inspect}"
+    socket.write(payload)
+    sleep(interval)
+  end
+rescue Interrupt
+  puts "Disconnected!"
+ensure
+  sockets.each(&:close)
+end
+
+test("localhost", 1234, 100, 0)
